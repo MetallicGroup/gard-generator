@@ -1,11 +1,11 @@
 from flask import Flask, request, jsonify
-import openai
 import os
+from openai import OpenAI
 
 app = Flask(__name__)
 
-# SETEAZĂ cheia ta de la OpenAI din Render (Environment variable)
-openai.api_key = os.environ.get("OPENAI_API_KEY")
+# Inițializează clientul OpenAI
+client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
 # PROMPTURI pentru fiecare model
 model_prompts = {
@@ -26,12 +26,13 @@ def generare():
     prompt = f"{model_prompts.get(model, '')} Înlocuiește gardul din poza clientului cu acest model, păstrând casa, fundalul și proporțiile neschimbate."
 
     try:
-        response = openai.Image.create(
+        response = client.images.generate(
+            model="dall-e-3",
             prompt=prompt,
-            n=1,
-            size="1024x1024"
+            size="1024x1024",
+            n=1
         )
-        image_url = response["data"][0]["url"]
+        image_url = response.data[0].url
         return jsonify({"image_url": image_url})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
