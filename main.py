@@ -30,8 +30,7 @@ def process():
     try:
         # 1. Descarcă imaginea originală de la client
         response = requests.get(image_url)
-        original_image = Image.open(BytesIO(response.content))
-
+        original_image = Image.open(BytesIO(response.content)).convert("RGB")
         # 2. Simulează adăugarea unui model de gard (text pe imagine)
         img_draw = original_image.copy()
         draw = ImageDraw.Draw(img_draw)
