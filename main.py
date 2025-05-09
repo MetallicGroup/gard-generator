@@ -1,45 +1,48 @@
 from flask import Flask, request, jsonify
+import requests
+import base64
+from PIL import Image, ImageDraw
+from io import BytesIO
 import os
-from openai import OpenAI
 
 app = Flask(__name__)
 
-# Inițializează clientul OpenAI
-client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+IMGBB_API_KEY = os.getenv('IMGBB_API_KEY')
 
-# PROMPTURI pentru fiecare model
-model_prompts = {
-    "MX15": "Un gard rezidențial modern compus din panouri metalice gri închis, fiecare cu 7 lamele orizontale tip jaluzea, înclinate la aproximativ 35 de grade. Lamelele au grosimea de 40 mm, sunt distanțate la 30 mm între ele și sunt încadrate într-un chenar metalic gros de 50 mm. Panoul gardului are aproximativ 1500 mm lățime și 1000 mm înălțime. Panourile sunt montate între stâlpi tencuiți bej, de 300 mm lățime și 1500 mm înălțime, fixați pe un soclu de beton de 400 mm înălțime. Designul este modern-industrial, robust și simetric, ideal pentru o locuință contemporană.",
-    "MX25": "Gard metalic orizontal cu lamele de grosime medie, înclinate la 25 de grade, distanțate la 25 mm între ele, cu cadru de 50 mm și culoare maro RAL 8017. Stil modern și aerisit.",
-    "MX60": "Gard modern cu lamele late, orizontale, distanțate, vopsite gri antracit, cu cadru gros și aspect industrial. Ideal pentru case contemporane."
-}
+def upload_to_imgbb(image_bytes):
+    encoded_image = base64.b64encode(image_bytes).decode('utf-8')
+    response = requests.post(
+        'https://api.imgbb.com/1/upload',
+        data={'key': IMGBB_API_KEY, 'image': encoded_image}
+    )
+    response.raise_for_status()
+    return response.json()['data']['url']
 
-@app.route("/generare", methods=["POST"])
-def generare():
+@app.route('/process', methods=['POST'])
+def process():
     data = request.json
-    model = data.get("model_gard")
-    poza = data.get("poza_gard")
-
-    if not model or not poza:
-        return jsonify({"error": "Lipsește modelul sau poza"}), 400
-
-    prompt = f"{model_prompts.get(model, '')} Înlocuiește gardul din poza clientului cu acest model, păstrând casa, fundalul și proporțiile neschimbate."
+    image_url = data.get('image_url')
+    model = data.get('model')
 
     try:
-        response = client.images.generate(
-            model="dall-e-3",
-            prompt=prompt,
-            size="1024x1024",
-            n=1
-        )
-        image_url = response.data[0].url
-        return jsonify({"image_url": image_url})
+        # 1. Descarcă imaginea
+        response = requests.get(image_url)
+        original_image = Image.open(BytesIO(response.content))
+
+        # 2. Simulare modificare: adaugă modelul pe imagine
+        img_draw = original_image.copy()
+        draw = ImageDraw.Draw(img_draw)
+        draw.text((20, 20), f"Model gard: {model}", fill=(255, 0, 0))
+
+        # 3. Salvează imaginea în memorie
+        img_byte_arr = BytesIO()
+        img_draw.save(img_byte_arr, format='JPEG')
+        img_byte_arr = img_byte_arr.getvalue()
+
+        # 4. Upload pe ImgBB
+        imgbb_url = upload_to_imgbb(img_byte_arr)
+
+        return jsonify({'image_url': imgbb_url})
+
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@app.route("/")
-def home():
-    return "Generator AI Garduri activ! 🛠️"
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=10000)
+        return jsonify({'error': str(e)}), 500
