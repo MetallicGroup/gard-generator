@@ -9,8 +9,7 @@ import os
 app = Flask(__name__)
 
 # === CONFIG ===
-REPLICATE_API_TOKEN = "r8_cf4gl9HvWXjEITY4PoPkCGnwomSy9g32GYhoP"
-os.environ["REPLICATE_API_TOKEN"] = REPLICATE_API_TOKEN
+client = replicate.Client(api_token=os.environ["REPLICATE_API_TOKEN"])
 
 # === UTIL: descarcă imagine din URL ===
 def load_image_from_url(url):
@@ -29,8 +28,8 @@ def build_prompt(model_name):
 
 # === CALL SAM MODEL (Replicate) ===
 def get_mask_from_replicate(image: Image.Image):
-    output = replicate.run(
-        "johndoe/sam:latest",  # actual model: swap cu model stabil SAM dacă e nevoie
+    output = client.run(
+        "johndoe/sam:latest",  # înlocuiește cu un model SAM valid
         input={
             "image": image_to_base64(image),
         }
@@ -43,8 +42,8 @@ def get_mask_from_replicate(image: Image.Image):
 def inpaint_with_replicate(image: Image.Image, mask: Image.Image, prompt: str):
     image = image.resize((512, 512))
     mask = mask.resize((512, 512))
-    
-    output = replicate.run(
+
+    output = client.run(
         "stability-ai/stable-diffusion-inpainting:fb7c6c34c7b83d7ff6826d8c3d60c7866e71860b167e16fba1c0a61c911b03ec",
         input={
             "image": image_to_base64(image),
