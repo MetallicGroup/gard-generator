@@ -59,14 +59,19 @@ def inpaint_with_replicate(image: Image.Image, mask: Image.Image, prompt: str):
 # === ENDPOINT ===
 @app.route("/generate", methods=["POST"])
 def generate():
-    data = request.get_json()
-    image_url = data.get("image_url")
-    model = data.get("model")
-
-    if not image_url or not model:
-        return jsonify({"error": "Lipsesc parametrii obligatorii"}), 400
-
     try:
+        data = request.get_json(force=True)
+        print("▶️ JSON primit:", data, flush=True)
+
+        if not data:
+            return jsonify({"error": "Body JSON invalid sau gol"}), 400
+
+        image_url = data.get("image_url")
+        model = data.get("model")
+
+        if not image_url or not model:
+            return jsonify({"error": "Lipsesc parametrii obligatorii"}), 400
+
         print("▶️ Primit URL:", image_url, "Model:", model, flush=True)
 
         original = load_image_from_url(image_url)
