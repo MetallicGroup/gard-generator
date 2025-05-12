@@ -1,56 +1,73 @@
 from flask import Flask, request, jsonify
 import requests
 import base64
-from PIL import Image, ImageDraw
 from io import BytesIO
-import os
+from PIL import Image
 
 app = Flask(__name__)
 
-# Ia cheia din variabilele de mediu (setată în Render)
-IMGBB_API_KEY = os.getenv('IMGBB_API_KEY')
+# === CONFIG ===
+IMGBB_API_KEY = "34f2316153715d983301e6a9632fc59d"  # <-- INLOCUIESTE cu cheia ta reala de la imgbb.com
 
-# Funcție pentru upload pe ImgBB
-def upload_to_imgbb(image_bytes):
-    encoded_image = base64.b64encode(image_bytes).decode('utf-8')
+# === UTIL: Upload imagine pe ImgBB ===
+def upload_to_imgbb(image: Image.Image):
+    buffered = BytesIO()
+    image.save(buffered, format="PNG")
+    img_base64 = base64.b64encode(buffered.getvalue()).decode()
+
     response = requests.post(
-        'https://api.imgbb.com/1/upload',
-        data={'key': IMGBB_API_KEY, 'image': encoded_image}
+        "https://api.imgbb.com/1/upload",
+        params={"key": IMGBB_API_KEY},
+        data={"image": img_base64}
     )
-    response.raise_for_status()
-    return response.json()['data']['url']
 
-# Endpoint principal care primește cererea de la Landbot
-@app.route('/process', methods=['POST'])
-def process():
-    data = request.json
-    image_url = data.get('image_url')
-    model = data.get('model')
+    if response.status_code == 200:
+        return response.json()["data"]["url"]
+    else:
+        return None
 
-    try:
-        # 1. Descarcă imaginea originală de la client
-        response = requests.get(image_url)
-        original_image = Image.open(BytesIO(response.content)).convert("RGB")
-        # 2. Simulează adăugarea unui model de gard (text pe imagine)
-        img_draw = original_image.copy()
-        draw = ImageDraw.Draw(img_draw)
-        draw.text((20, 20), f"Model gard: {model}", fill=(255, 0, 0))
+# === FAKE GENERATOR (inlocuieste cu AI real mai tarziu) ===
+def generate_fake_image(image_url, model):
+    # Descarcă imaginea originală
+    response = requests.get(image_url)
+    image = Image.open(BytesIO(response.content)).convert("RGB")
 
-        # 3. Salvează imaginea în memorie (ca bytes)
-        img_byte_arr = BytesIO()
-        img_draw.save(img_byte_arr, format='JPEG')
-        img_byte_arr = img_byte_arr.getvalue()
+    # Simulare: doar adăugăm text cu modelul ales peste imagine
+    from PIL import ImageDraw, ImageFont
+    draw = ImageDraw.Draw(image)
+    draw.text((10, 10), f"Model: {model}", fill=(255, 0, 0))
 
-        # 4. Trimite imaginea pe ImgBB
-        imgbb_url = upload_to_imgbb(img_byte_arr)
+    return image
 
-        # 5. Returnează linkul în JSON
-        return jsonify({'image_url': imgbb_url})
+# === ENDPOINT PRINCIPAL ===
+@app.route("/generate", methods=["POST"])
+def generate():
+    data = request.get_json()
 
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+    image_url = data.get("image_url")
+    model = data.get("model")
+    nume = data.get("nume")
+    telefon = data.get("telefon")
 
-# Pornirea serverului în Render (PORT setat automat)
+    if not image_url or not model:
+        return jsonify({"error": "Faltă imaginea sau modelul"}), 400
+
+    # Generează imaginea cu modelul (de test)
+    generated_image = generate_fake_image(image_url, model)
+
+    # Încarcă pe ImgBB
+    imgbb_url = upload_to_imgbb(generated_image)
+
+    if not imgbb_url:
+        return jsonify({"error": "Nu s-a putut urca imaginea"}), 500
+
+    return jsonify({"image_link": imgbb_url})
+
+# === VERIFICARE ===
+@app.route("/")
+def index():
+    return "API Gard Generator activ. Folosește /generate pentru POST."
+
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    from waitress import serve
+    serve(app, host="0.0.0.0", port=5000)
