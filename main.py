@@ -29,7 +29,7 @@ def build_prompt(model_name):
 # === CALL SAM MODEL (Replicate) ===
 def get_mask_from_replicate(image: Image.Image):
     output = client.run(
-        "johndoe/sam:latest",  # înlocuiește cu un model SAM valid
+        "jingyunliang/sam:dbdd707c1cf285c963a1b5979272f5c3d1cf9c1cc5b1f2ed05e9fe9e5c4b436a",
         input={
             "image": image_to_base64(image),
         }
