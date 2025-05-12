@@ -29,7 +29,7 @@ def build_prompt(model_name):
 # === CALL SAM MODEL (Replicate) ===
 def get_mask_from_replicate(image: Image.Image):
     output = client.run(
-        "jingyunliang/sam:dbdd707c1cf285c963a1b5979272f5c3d1cf9c1cc5b1f2ed05e9fe9e5c4b436a",
+        "nateraw/sam:3f82db5ecb11eb7f1d18d27a52c0e3f3aa3f477760d359601d3fcdf3d9d30800",
         input={
             "image": image_to_base64(image),
         }
