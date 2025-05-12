@@ -3,6 +3,7 @@ requests
 replicate
 segment-anything @ git+https://github.com/facebookresearch/segment-anything.git
 torch
+torchvision
 opencv-python
 numpy
 Pillow
