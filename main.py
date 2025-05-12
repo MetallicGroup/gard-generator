@@ -2,27 +2,27 @@ from flask import Flask, request, jsonify
 import requests
 import base64
 import replicate
-import torch
 import numpy as np
 import cv2
 from io import BytesIO
 from PIL import Image, ImageDraw
 from segment_anything import sam_model_registry, SamPredictor
 import os
+import torch
 
 app = Flask(__name__)
 
 # === CONFIG ===
-IMGBB_API_KEY = "34f2316153715d983301e6a9632fc59d"  # <-- înlocuiește cu cheia ta reală
+IMGBB_API_KEY = "34f2316153715d983301e6a9632fc59dY"  # <-- înlocuiește cu cheia ta reală
 REPLICATE_API_TOKEN = "r8_cf4gl9HvWXjEITY4PoPkCGnwomSy9g32GYhoP"
 os.environ["REPLICATE_API_TOKEN"] = REPLICATE_API_TOKEN
 
-# === LOAD SAM ===
+# === LOAD SAM FORȚAT PE CPU ===
 SAM_CHECKPOINT = "sam_vit_h_4b8939.pth"
 if not os.path.exists(SAM_CHECKPOINT):
     os.system(f"wget -q https://dl.fbaipublicfiles.com/segment_anything/{SAM_CHECKPOINT}")
 
-sam = sam_model_registry["vit_h"](checkpoint=SAM_CHECKPOINT).to("cpu")  # Render nu are GPU
+sam = sam_model_registry["vit_h"](checkpoint=SAM_CHECKPOINT).to(torch.device("cpu"))
 predictor = SamPredictor(sam)
 
 # === UTIL: Upload imagine pe ImgBB ===
