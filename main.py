@@ -67,13 +67,24 @@ def generate():
         return jsonify({"error": "Lipsesc parametrii obligatorii"}), 400
 
     try:
+        print("▶️ Primit URL:", image_url, "Model:", model, flush=True)
+
         original = load_image_from_url(image_url)
+        print("✅ Imagine originală descărcată", flush=True)
+
         mask = get_mask_from_replicate(original)
+        print("✅ Mască generată", flush=True)
+
         prompt = build_prompt(model)
+        print("🧠 Prompt generat:", prompt[:60], flush=True)
+
         result_url = inpaint_with_replicate(original, mask, prompt)
+        print("✅ Imagine AI generată:", result_url, flush=True)
 
         return jsonify({"image_link": result_url})
+
     except Exception as e:
+        print("🔥 EROARE:", str(e), flush=True)
         return jsonify({"error": str(e)}), 500
 
 @app.route("/")
