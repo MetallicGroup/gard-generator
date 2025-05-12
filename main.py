@@ -44,7 +44,7 @@ def inpaint_with_replicate(image: Image.Image, mask: Image.Image, prompt: str):
     mask = mask.resize((512, 512))
 
     output = client.run(
-        "stability-ai/stable-diffusion-inpainting:fb7c6c34c7b83d7ff6826d8c3d60c7866e71860b167e16fba1c0a61c911b03ec",
+        "stability-ai/stable-diffusion-inpainting",
         input={
             "image": image_to_base64(image),
             "mask": image_to_base64(mask),
