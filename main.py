@@ -37,11 +37,14 @@ def inpaint_with_replicate(image: Image.Image, mask: Image.Image, prompt: str):
     mask = mask.resize((1024, 1024))
 
     output = client.run(
-        "sepal/sdxl-inpainting",
+        "lucataco/sdxl-inpaint",
         input={
             "image": image_to_base64(image),
             "mask": image_to_base64(mask),
-            "prompt": prompt
+            "prompt": prompt,
+            "negative_prompt": "",
+            "guidance_scale": 7.5,
+            "num_inference_steps": 50
         }
     )
     return output[0] if isinstance(output, list) else output
